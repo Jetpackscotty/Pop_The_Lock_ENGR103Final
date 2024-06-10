@@ -2,7 +2,7 @@
 #include <Adafruit_CircuitPlayground.h>
 
 int micLevel = 0;
-int mute = 0;
+int mute = 1;
 
 int correct = 5;
 int currentpos = 0;
@@ -10,8 +10,7 @@ int target = random(1,9);
 
 int levelDelay = 1000;
 
-volatile bool flagSSL = 0;
-volatile bool flagSSH = 0;
+volatile bool flagSS = 0;
 volatile bool flagLB = 0;
 volatile bool flagRB = 0;
 
@@ -43,13 +42,11 @@ int winSong[6][2] = {
 
 void setup() {
 
-mute = CircuitPlayground.slideSwitch();
 Serial.begin(9600);
 CircuitPlayground.begin();
 attachInterrupt(5, irpLeftButton, RISING);
 attachInterrupt(4, irpRightButton, RISING);
-attachInterrupt(7, irpSwitchH, RISING);
-attachInterrupt(7, irpSwitchL, FALLING);
+attachInterrupt(7, irpSwitch, CHANGE);
 generateMIDI();
 
 }
@@ -69,25 +66,13 @@ if (micLevel > 80) {
 }
 
 // Main Portion
-if (correct == 0) {
-    
-    if (flagSSH == 1) {
-      mute = 1;
-      flagSSH = 0;
-    }    
-    
-    if (flagSSL == 1) {
-      mute = 0;
-      flagSSL = 0;
-    }
-
-
+if (correct == 0) { 
 
     for (int i=0; i < 10; ++i) {
         currentpos = i;
         CircuitPlayground.setPixelColor(target, 255, 255, 255);
         CircuitPlayground.setPixelColor(i, redP, greenP, blueP);
-        if (mute == 0) {
+        if (mute == 1) {
           CircuitPlayground.playTone(midi[65], 50);
         }
         delay(levelDelay);
@@ -122,7 +107,7 @@ if (correct == 1) {
     CircuitPlayground.setPixelColor(i, 255, 0, 0);
     delay(50);
   }
-  if (mute == 0) {
+  if (mute == 1) {
     for(int i = 0; i < sizeof(badSong) / sizeof(badSong[0]); i++) {
       CircuitPlayground.playTone(midi[badSong[i][0]], badSong[i][1]);
       delay(1);
@@ -139,7 +124,7 @@ if (correct == 2) {
     CircuitPlayground.setPixelColor(i, redP, greenP, blueP);
     delay(50);
   }
-  if (mute == 0) {
+  if (mute == 1) {
     for(int i = 0; i < sizeof(winSong) / sizeof(winSong[0]); i++) {
       CircuitPlayground.playTone(midi[winSong[i][0]], winSong[i][1]);
       delay(1);
@@ -159,14 +144,11 @@ void irpRightButton() {
     blueP = random(255);
     delay(50);
 }
-void irpSwitchH() {
-    flagSSH = 1;
+void irpSwitch() {
+    mute = mute * -1;
     delay(50);
 }
-void irpSwitchL() {
-    flagSSL = 1;
-    delay(50);
-}
+
 
 // DO NOT EDIT!!!!!
 void generateMIDI() {
